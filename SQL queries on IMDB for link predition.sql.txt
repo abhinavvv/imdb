@@ -1,3 +1,4 @@
+-- This file contains the SQL queries we issued to obtain the necessary data for our link prediction task
 
 --Top movies (more than 100000 votes
 
