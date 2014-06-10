@@ -6,7 +6,7 @@ start_time = time.time()
 
 def readdata(filename):
     return np.genfromtxt(filename ,delimiter=",",dtype=int)
-end
+
 
 def compute_neighbors(data,total_actors):
 
@@ -15,7 +15,7 @@ def compute_neighbors(data,total_actors):
         binary_matrix[total_actors.index(data[i,0]),total_actors.index(data[i,1])] = 1    
     
     return binary_matrix
-end
+
 
 def find_common_neighbors(binary_matrix):
     neighbors = {}
@@ -23,7 +23,7 @@ def find_common_neighbors(binary_matrix):
         neighbors[i] = np.array(np.where(binary_matrix[i,:]==1))
 
     return neighbors
-end
+
 
 
 def get_score(neighbors):
@@ -34,7 +34,7 @@ def get_score(neighbors):
             score_matrix[i,j] = 0 if i==j else len(set(neighbors[i][0])&set(neighbors[j][0]))
 
     return score_matrix
-end
+
 
 
 def find_top_scoring_neighbors(score_matrix):
@@ -45,7 +45,7 @@ def find_top_scoring_neighbors(score_matrix):
         top_scores[j] = np.where(score_matrix==j)
 
     return top_scores
-end
+
 
 def build_collaborators(top_scores):
     collaborations = []
@@ -64,7 +64,11 @@ end
 
 data = readdata("Collaborations20012005.csv")
 
+test_data = readdata("NewCollaborations20062007.csv")
+
 total_unique_actors = list(set.union(set(data[:,0]),set(data[:,1])))
+total_unique_test_actors = list(set.union(set(data[:,0]),set(data[:,1]))) & list(set.union(set(test_data[:,0]),set(test_data[:,1])))
+
 total_unique_actors.sort()
 
 print "Total unique actors = ", len(total_actors)
@@ -72,6 +76,7 @@ print "learning file loaded..."
 
 #constructing binary matrix based on collaborators
 binary_matrix = compute_neighbors(data,total_unique_actors)
+binary_matrix_for_test = compute_neighbors(test_data,total_unique_test_actors)
 
 print "binary matrix constructed..."
 
