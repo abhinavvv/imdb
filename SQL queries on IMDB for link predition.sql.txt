@@ -1,0 +1,756 @@
+
+--Top movies (more than 100000 votes
+
+CREATE TABLE TopMovies(movieid,title,votes,rating) 
+AS 
+(SELECT T.id,title,M1.info,M2.info FROM title T, movie_info_idx M1, movie_info_idx M2,
+info_type I1, info_type I2 WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id
+AND I1.info='votes' AND T.id=M2.movie_id AND M2.info_type_id=I2.id AND I2.info='rating' AND to_number(M1.info,'99999999')>100000 );
+
+
+--Obtain all actors in movies with more than 50,000 votes in years 2001-2007 that have played in at least 2 movies with more than 50,000 votes in that time frame
+
+SELECT C.person_id, COUNT(DISTINCT T.id)
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND C.role_id=1
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2008 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+--Store into table Actors20012007:
+
+CREATE TABLE Actors20012005small AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2008 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+--Collaborations of actors 2001-2005:
+
+CREATE TABLE Collaborations20012005 AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND C1.role_id=1 AND T.id=C2.movie_id AND C2.role_id=1
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2006;
+
+Collaborations 2006-2007:
+CREATE TABLE Collaborations20062007 AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND C1.role_id=1 AND T.id=C2.movie_id AND C2.role_id=1
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2005 AND T.production_year<2008;
+
+New Collaborations2006-2007:
+CREATE TABLE NewCollaborations20062007 AS
+SELECT * FROM Collaborations20062007 EXCEPT SELECT * FROM Collaborations20012005;
+
+--Canvas:
+
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND C1.role_id=1 AND T.id=C2.movie_id AND C2.role_id=1
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2006;
+
+
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND C.role_id=1
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2008 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+
+
+--Include Both Actors and Actresses!!!
+
+Store all actors and actresses starring into movies of more than 50,000 votes into table Actors20012007:
+CREATE TABLE Actors20012007 AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2008 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+Create collaborations for Authors of popular movies, for all movies (not only those with 50,000 votes)
+CREATE TABLE AllCollaborations20012005 AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE AllCollaborations20062007 AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2005 AND T.production_year<2008;
+
+
+New AllCollaborations2006-2007:
+CREATE TABLE AllNewCollaborations20062007 AS
+SELECT * FROM AllCollaborations20062007 EXCEPT SELECT * FROM AllCollaborations20012005;
+
+
+--Actors reduced (only those who have starred in more than 200,000 votes movies)
+
+CREATE TABLE Actors20012007 AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>200000 AND T.production_year>2000 AND T.production_year<2008 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+
+-- Directors- actors collaborations:
+
+CREATE TABLE Directors20012007 AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=8)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>250000 AND T.production_year>2000 AND T.production_year<2008 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+CREATE TABLE DirectorsActors20012005 AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Directors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=8) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE DirectorsActors20062007 AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Directors20012007 A1, Actors20012007 A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=8) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2005 AND T.production_year<2008;
+
+
+
+
+
+
+
+
+
+SELECT * FROM AllCollaborations20062007med EXCEPT SELECT * FROM AllCollaborations20012005med;
+
+
+
+
+CREATE TABLE Actors20012005small AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>230000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+--Extract all collaborations for all movies (not only high rated ones) for all 4 datasets in periods 2001-2005 (train) and 2006-2007 (test)
+
+CREATE TABLE AllCollaborations20012005small AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005small A1, Actors20012005small A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+CREATE TABLE AllCollaborations20062007small AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005small A1, Actors20012005small A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2005 AND T.production_year<2008;
+
+
+CREATE TABLE AllNewCollaborations20062007small AS
+SELECT * FROM AllCollaborations20062007small EXCEPT SELECT * FROM AllCollaborations20012005small;
+
+
+CREATE TABLE Actors20012005med AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>160000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+CREATE TABLE AllCollaborations20012005med AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005med A1, Actors20012005med A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+
+
+CREATE TABLE AllCollaborations20062007med AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005med A1, Actors20012005med A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2005 AND T.production_year<2008;
+
+
+
+CREATE TABLE AllNewCollaborations20062007med AS
+
+
+
+CREATE TABLE Actors20012005large AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>110000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+
+CREATE TABLE AllCollaborations20012005large AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005large A1, Actors20012005large A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE AllCollaborations20062007large AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005large A1, Actors20012005large A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2005 AND T.production_year<2008;
+
+
+CREATE TABLE AllNewCollaborations20062007large AS
+SELECT * FROM AllCollaborations20062007large EXCEPT SELECT * FROM AllCollaborations20012005large;
+
+
+
+CREATE TABLE Actors20012005big AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=1 OR C.role_id=2)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>70000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id HAVING COUNT(DISTINCT T.id)>1;
+
+CREATE TABLE AllCollaborations20012005big AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005big A1, Actors20012005big A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE AllCollaborations20062007big AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Actors20012005big A1, Actors20012005big A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=1 OR C1.role_id=2) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2005 AND T.production_year<2008;
+
+
+New AllCollaborations2006-2007:
+CREATE TABLE AllNewCollaborations20062007big AS
+SELECT * FROM AllCollaborations20062007big EXCEPT SELECT * FROM AllCollaborations20012005big;
+
+
+
+
+Extract to files for the three datasets
+Small:
+COPY Actors20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/Actors20012005small.csv' delimiter ',';
+COPY AllCollaborations20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/C0105small.csv' delimiter ',';
+COPY AllNewCollaborations20062007small TO '/Users/vassilis/Desktop/CMPS290C/small/C0506.csv' delimiter ',';
+
+
+
+Medium:
+COPY Actors20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/Actors20012005med.csv' delimiter ',';
+COPY AllCollaborations20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/C0105med.csv' delimiter ',';
+COPY AllNewCollaborations20062007med TO '/Users/vassilis/Desktop/CMPS290C/med/C0506med.csv' delimiter ',';
+
+
+
+Big:
+COPY Actors20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/Actors20012005big.csv' delimiter ',';
+COPY AllCollaborations20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/C0105big.csv' delimiter ',';
+COPY AllNewCollaborations20062007big TO '/Users/vassilis/Desktop/CMPS290C/big/C0506big.csv' delimiter ',';
+
+Large:
+
+COPY Actors20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/Actors20012005large.csv' delimiter ',';
+COPY AllCollaborations20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/C0105large.csv' delimiter ',';
+COPY AllNewCollaborations20062007large TO '/Users/vassilis/Desktop/CMPS290C/large/C0506large.csv' delimiter ',';
+
+
+--Small dataset directors and director collaborations:
+
+CREATE TABLE Directors20012005small AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=8)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>230000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+
+CREATE TABLE DirectorsActors20012005small AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Directors20012005small A1, Actors20012005small A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=8) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+-Medium dataset directors and actor-director collaborations:
+
+CREATE TABLE Directors20012005med AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=8)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>160000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+
+CREATE TABLE DirectorsActors20012005med AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Directors20012005med A1, Actors20012005med A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=8) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+--Large dataset directors and director collaborations
+
+CREATE TABLE Directors20012005large AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=8)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>110000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+CREATE TABLE DirectorsActors20012005large AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Directors20012005large A1, Actors20012005large A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=8) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+-Extra large dataset directors and directors collaborations
+
+CREATE TABLE Directors20012005big AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=8)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+
+CREATE TABLE DirectorsActors20012005big AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Directors20012005big A1, Actors20012005big A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=8) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+-- Like wise for producers (small, medium, large and extra large datasets)
+
+
+CREATE TABLE Producers20012005small AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=3 OR C.role_id=11)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>230000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+33
+
+
+CREATE TABLE ProducersActors20012005small AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Producers20012005small A1, Actors20012005small A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=3 OR C1.role_id=11) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE Producers20012005med AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=3 OR C.role_id=11)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>160000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+
+CREATE TABLE ProducersActors20012005med AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Producers20012005med A1, Actors20012005med A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=3 OR C1.role_id=11) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+
+CREATE TABLE Producers20012005big AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=3 OR C.role_id=11)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>50000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+
+CREATE TABLE ProducersActors20012005big AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Producers20012005big A1, Actors20012005big A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=3 OR C1.role_id=11) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE Producers20012005large AS
+SELECT C.person_id
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C.movie_id AND (C.role_id=3 OR C.role_id=11)
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1
+    AND to_number(M1.info,'99999999')>110000 AND T.production_year>2000 AND T.production_year<2006 GROUP BY C.person_id;
+
+CREATE TABLE ProducersActors20012005large AS
+SELECT DISTINCT A1.person_id as Actor1, A2.person_id as Actor2
+FROM title T, movie_info_idx M1, movie_info_idx M2, 
+          info_type I1, info_type I2, cast_info C1, cast_info C2, Producers20012005large A1, Actors20012005large A2
+WHERE T.id=M1.movie_id AND M1.info_type_id=I1.id 
+    AND I1.info='votes' AND T.id=M2.movie_id AND T.id=C1.movie_id AND (C1.role_id=3 OR C1.role_id=11) AND T.id=C2.movie_id AND (C2.role_id=1 or C2.role_id=2)
+    AND C1.person_id=A1.person_id AND C2.person_id=A2.person_id 
+    AND M2.info_type_id=I2.id AND I2.info='rating' AND T.kind_id=1 AND A1.person_id<>A2.person_id
+    AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+--Death of actor (code 23 corresponds to death date, checked)
+
+CREATE TABLE Deceased20012005small AS
+SELECT A.person_id 
+FROM Actors20012005small A, person_info P
+WHERE A.person_id=P.person_id AND P.info_type_id=23 AND P.info SIMILAR TO '%200(0|1|2|3|4|5)%';
+
+
+
+CREATE TABLE Deceased20012005med AS
+SELECT A.person_id
+FROM Actors20012005med A, person_info P
+WHERE A.person_id=P.person_id AND P.info_type_id=23 AND P.info SIMILAR TO '%200(0|1|2|3|4|5)%';
+
+
+CREATE TABLE Deceased20012005large AS
+SELECT A.person_id
+FROM Actors20012005large A, person_info P
+WHERE A.person_id=P.person_id AND P.info_type_id=23 AND P.info SIMILAR TO '%200(0|1|2|3|4|5)%';
+
+
+
+CREATE TABLE Deceased20012005big AS
+SELECT A.person_id
+FROM Actors20012005big A, person_info P
+WHERE A.person_id=P.person_id AND P.info_type_id=23 AND P.info SIMILAR TO '%200(0|1|2|3|4|5)%';
+
+
+-- Genres, actor genre pairs for small, medium, large and extra large dataset:
+
+
+CREATE TABLE ActorGenre20012005small AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005small A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=3 AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+CREATE TABLE ActorGenre20012005med AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005med A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=3  AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE ActorGenre20012005large AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005large A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=3  AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE ActorGenre20012005big AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005big A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=3  AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+
+
+-- Actor language pairs for all 4 datasets:
+
+CREATE TABLE ActorLanguage20012005small AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005small A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=4 AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorLanguage20012005med AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005med A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=4 AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE ActorLanguage20012005large AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005large A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=4 AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+CREATE TABLE ActorLanguage20012005big AS
+SELECT DISTINCT A.person_id, M.info
+FROM Actors20012005big A, cast_info C, movie_info M, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id and M.info_type_id=4 AND M.movie_id=T.id AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+
+
+--actor-production company pairs for all 4 datasets:
+
+CREATE TABLE ActorProd20012005small AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005small A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=2 AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorProd20012005med AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005med A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=2 AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorProd20012005large AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005large A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=2 AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorProd20012005big AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005big A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=2 AND T.production_year>2000 AND T.production_year<2006;
+
+
+-- actor - distribution company pairs for all 4 datasets:
+
+CREATE TABLE ActorDist20012005small AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005small A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=1 AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorDist20012005med AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005med A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=1 AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorDist20012005large AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005large A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=1 AND T.production_year>2000 AND T.production_year<2006;
+
+CREATE TABLE ActorDist20012005big AS
+SELECT DISTINCT A.person_id, N.name
+FROM Actors20012005big A, cast_info C, movie_companies M, company_name N, title T
+WHERE A.person_id=C.person_id AND C.movie_id=M.movie_id AND M.movie_id=T.id AND M.company_id=N.id AND country_code='[us]' AND company_type_id=1 AND T.production_year>2000 AND T.production_year<2006;
+
+
+
+-- User quality for all 4 datasets
+
+CREATE TABLE ActorQuality20012005small AS
+SELECT A.person_id, AVG(to_number(M.info, '99.99'))
+FROM Actors20012005small A, cast_info C, movie_info_idx M, info_type I
+WHERE A.person_id= C.person_id AND M.movie_id=C.movie_id AND M.info_type_id=I.id AND I.info='rating'
+GROUP BY A.person_id;
+
+
+CREATE TABLE ActorQuality20012005med AS
+SELECT A.person_id, AVG(to_number(M.info, '99.99'))
+FROM Actors20012005small A, cast_info C, movie_info_idx M, info_type I
+WHERE A.person_id= C.person_id AND M.movie_id=C.movie_id AND M.info_type_id=I.id AND I.info='rating'
+GROUP BY A.person_id;
+
+CREATE TABLE ActorQuality20012005large AS
+SELECT A.person_id, AVG(to_number(M.info, '99.99'))
+FROM Actors20012005small A, cast_info C, movie_info_idx M, info_type I
+WHERE A.person_id= C.person_id AND M.movie_id=C.movie_id AND M.info_type_id=I.id AND I.info='rating'
+GROUP BY A.person_id;
+
+CREATE TABLE ActorQuality20012005big AS
+SELECT A.person_id, AVG(to_number(M.info, '99.99'))
+FROM Actors20012005small A, cast_info C, movie_info_idx M, info_type I
+WHERE A.person_id= C.person_id AND M.movie_id=C.movie_id AND M.info_type_id=I.id AND I.info='rating'
+GROUP BY A.person_id;
+
+--extract obtained relations into CSV files for use by our machine learning techniques
+
+COPY DirectorsActors20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/DA20012005small.csv' delimiter ',';
+COPY DirectorsActors20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/DA20012005med.csv' delimiter ',';
+COPY DirectorsActors20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/DA20012005large.csv' delimiter ',';
+COPY DirectorsActors20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/DA20012005big.csv' delimiter ',';
+
+
+COPY ProducersActors20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/PA20012005small.csv' delimiter ',';
+COPY ProducersActors20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/PA20012005med.csv' delimiter ',';
+COPY ProducersActors20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/PA20012005large.csv' delimiter ',';
+COPY ProducersActors20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/PA20012005big.csv' delimiter ',';
+
+
+COPY Deceased20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/Dead20012005small.csv' delimiter ',';
+COPY Deceased20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/Dead20012005med.csv' delimiter ',';
+COPY Deceased20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/Dead20012005large.csv' delimiter ',';
+COPY Deceased20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/Dead20012005big.csv' delimiter ',';
+
+COPY ActorGenre20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/AG20012005small.csv' delimiter ',';
+COPY ActorGenre20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/AG20012005med.csv' delimiter ',';
+COPY ActorGenre20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/AG20012005large.csv' delimiter ',';
+COPY ActorGenre20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/AG20012005big.csv' delimiter ',';
+
+COPY ActorDist20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/AD20012005small.csv' delimiter ',';
+COPY ActorDist20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/AD20012005med.csv' delimiter ',';
+COPY ActorDist20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/AD20012005large.csv' delimiter ',';
+COPY ActorDist20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/AD20012005big.csv' delimiter ',';
+
+
+
+COPY ActorProd20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/AP20012005small.csv' delimiter ',';
+COPY ActorProd20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/AP20012005med.csv' delimiter ',';
+COPY ActorProd20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/AP20012005large.csv' delimiter ',';
+COPY ActorProd20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/AP20012005big.csv' delimiter ',';
+
+
+
+
+COPY ActorLanguage20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/AL20012005small.csv' delimiter ',';
+COPY ActorLanguage20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/AL20012005med.csv' delimiter ',';
+COPY ActorLanguage20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/AL20012005large.csv' delimiter ',';
+COPY ActorLanguage20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/AL20012005big.csv' delimiter ',';
+
+
+COPY ActorQuality20012005small TO '/Users/vassilis/Desktop/CMPS290C/small/AQ20012005small.csv' delimiter ',';
+COPY ActorQuality20012005med TO '/Users/vassilis/Desktop/CMPS290C/med/AQ20012005med.csv' delimiter ',';
+COPY ActorQuality20012005large TO '/Users/vassilis/Desktop/CMPS290C/large/AQ20012005large.csv' delimiter ',';
+COPY ActorQuality20012005big TO '/Users/vassilis/Desktop/CMPS290C/big/AQ20012005big.csv' delimiter ',';
+
+
+
+
